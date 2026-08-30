@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task 2: Perceptual Speed</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #eef1f6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+    color: #1f2937;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    padding: 36px 44px;
+    max-width: 760px;
+    width: 100%;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  header h1 { font-size: 20px; }
+  header .tag {
+    background: #2563eb;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 4px 10px;
+  }
+  .progress-wrap { background: #e5e7eb; height: 8px; border-radius: 6px; overflow: hidden; margin-bottom: 24px; }
+  .progress-bar { background: #2563eb; height: 100%; width: 100%; transition: width .2s linear; }
+  .timer-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .qnum { font-size: 14px; color: #6b7280; margin-bottom: 0; }
+  .timer { font-size: 24px; font-weight: 700; font-family: "Courier New", monospace; color: #1f2937; }
+  .timer.warn { color: #dc2626; }
+
+  .instructions { line-height: 1.6; font-size: 15px; }
+  .instructions p { margin-bottom: 14px; }
+  .instructions .sample {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    margin: 20px 0;
+  }
+  .instructions .example {
+    display: flex;
+    gap: 8px;
+    flex-direction: column;
+    align-items: center;
+  }
+  .example .pair { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .example .row { display: flex; gap: 20px; }
+
+  .question-area { text-align: center; }
+  .pairs {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    margin: 30px 0 40px;
+  }
+  .pair {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+  }
+  .pair span {
+    font-size: 40px;
+    font-weight: 700;
+    font-family: "Courier New", monospace;
+  }
+  .options { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .option {
+    width: 72px;
+    height: 72px;
+    font-size: 28px;
+    font-weight: 700;
+    border: 2px solid #cbd5e1;
+    background: #f8fafc;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all .12s ease;
+    color: #1f2937;
+  }
+  .option:hover { border-color: #2563eb; background: #eff6ff; }
+  .option.correct { border-color: #16a34a; background: #dcfce7; }
+  .option.wrong { border-color: #dc2626; background: #fee2e2; }
+
+  button.primary {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.primary:hover { background: #1d4ed8; }
+  .center { text-align: center; margin-top: 20px; }
+
+  .results { text-align: center; }
+  .results h2 { margin-bottom: 20px; }
+  .stat-grid { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 28px; }
+  .stat {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px 26px;
+    min-width: 150px;
+  }
+  .stat .value { font-size: 32px; font-weight: 700; color: #2563eb; }
+  .stat .label { font-size: 13px; color: #6b7280; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; text-align: center; }
+  th { background: #f8fafc; color: #6b7280; font-weight: 600; }
+  td.ok { color: #16a34a; font-weight: 600; }
+  td.bad { color: #dc2626; font-weight: 600; }
+  a.back { display: inline-block; margin-top: 24px; color: #2563eb; text-decoration: none; font-size: 14px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <h1>Task 2: Perceptual Speed</h1>
+      <span class="tag">GIA Mock</span>
+    </header>
+
+    <!-- Instruction screen -->
+    <div id="instructionScreen">
+      <div class="instructions">
+        <p>You will see <strong>four vertical pairs of letters</strong>. You must decide how many pairs contain letters that are the <strong>same</strong>.</p>
+        <p>Capital letters (like <strong>F</strong>) are the same as small letters (like <strong>f</strong>).</p>
+        <div class="sample">
+          <div class="example">
+            <div class="row">
+              <div class="pair"><span>E</span><span>e</span></div>
+              <div class="pair"><span>Q</span><span>y</span></div>
+              <div class="pair"><span>D</span><span>d</span></div>
+              <div class="pair"><span>K</span><span>k</span></div>
+            </div>
+            <p style="font-size:13px;color:#6b7280;">E/e, D/d and K/k match → answer <strong>3</strong></p>
+          </div>
+        </div>
+        <p>Each question has five possible answers in boxes numbered <strong>0–4</strong>. Click the number of matching pairs.</p>
+        <p>Work as quickly and accurately as possible. You have <strong>4 minutes</strong> to answer as many questions as you can.</p>
+      </div>
+      <div class="center">
+        <button class="primary" id="startBtn">Start Test</button>
+      </div>
+    </div>
+
+    <!-- Question screen -->
+    <div id="questionScreen" style="display:none;">
+      <div class="timer-row">
+        <div class="qnum" id="qnum">Question 1</div>
+        <div class="timer" id="timer">4:00</div>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="question-area">
+        <div class="pairs" id="pairs"></div>
+        <div class="options" id="options"></div>
+      </div>
+    </div>
+
+    <!-- Results screen -->
+    <div id="resultScreen" style="display:none;">
+      <div class="results">
+        <h2>Results</h2>
+        <div class="stat-grid">
+          <div class="stat"><div class="value" id="statCorrect">0%</div><div class="label">Correct</div></div>
+          <div class="stat"><div class="value" id="statAvg">0.00s</div><div class="label">Avg time / question</div></div>
+          <div class="stat"><div class="value" id="statAnswered">0</div><div class="label">Answered</div></div>
+          <div class="stat"><div class="value" id="statScore">0</div><div class="label">Score</div></div>
+        </div>
+        <table id="detailTable">
+          <thead>
+            <tr><th>#</th><th>Time (s)</th><th>Result</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <a class="back" href="index.html">← Back to menu</a>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const TIME_LIMIT = 4 * 60;
+  const PENALTY = 0.25;
+  const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  let current = null;
+  let answered = 0;
+  let qStart = 0;
+  let finished = false;
+  let endTime = 0;
+  let timerInterval = null;
+  const results = [];
+
+  const instructionScreen = document.getElementById("instructionScreen");
+  const questionScreen = document.getElementById("questionScreen");
+  const resultScreen = document.getElementById("resultScreen");
+  const pairsEl = document.getElementById("pairs");
+  const optionsEl = document.getElementById("options");
+  const qnumEl = document.getElementById("qnum");
+  const timerEl = document.getElementById("timer");
+  const progressBar = document.getElementById("progressBar");
+
+  function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+  function generateQuestion() {
+    const pairs = [];
+    let sameCount = 0;
+    const topUpper = Math.random() < 0.5;
+    for (let i = 0; i < 4; i++) {
+      const letter = LETTERS[randInt(0, 25)];
+      const isSame = Math.random() < 0.5;
+      let top, bottom;
+      if (isSame) {
+        top = topUpper ? letter : letter.toLowerCase();
+        bottom = topUpper ? letter.toLowerCase() : letter;
+        sameCount++;
+      } else {
+        let other = letter;
+        while (other === letter) other = LETTERS[randInt(0, 25)];
+        top = topUpper ? letter : letter.toLowerCase();
+        bottom = topUpper ? other.toLowerCase() : other;
+      }
+      pairs.push({ top: top, bottom: bottom });
+    }
+    return { pairs: pairs, answer: sameCount };
+  }
+
+  function renderQuestion() {
+    current = generateQuestion();
+    qnumEl.textContent = "Question " + (answered + 1);
+
+    pairsEl.innerHTML = "";
+    current.pairs.forEach(function (p) {
+      const pairDiv = document.createElement("div");
+      pairDiv.className = "pair";
+      const t = document.createElement("span");
+      t.textContent = p.top;
+      const b = document.createElement("span");
+      b.textContent = p.bottom;
+      pairDiv.appendChild(t);
+      pairDiv.appendChild(b);
+      pairsEl.appendChild(pairDiv);
+    });
+
+    optionsEl.innerHTML = "";
+    for (let n = 0; n <= 4; n++) {
+      const btn = document.createElement("button");
+      btn.className = "option";
+      btn.textContent = n;
+      btn.addEventListener("click", function () { answer(n); });
+      optionsEl.appendChild(btn);
+    }
+
+    qStart = performance.now();
+  }
+
+  function answer(chosen) {
+    if (finished) return;
+    const elapsed = (performance.now() - qStart) / 1000;
+    const correct = current.answer === chosen;
+    results.push({ correct: correct, time: elapsed });
+    answered++;
+
+    const buttons = optionsEl.querySelectorAll(".option");
+    buttons[current.answer].classList.add("correct");
+    if (!correct) buttons[chosen].classList.add("wrong");
+    buttons.forEach(function (b) { b.disabled = true; b.style.cursor = "default"; });
+
+    setTimeout(function () {
+      if (!finished) renderQuestion();
+    }, 450);
+  }
+
+  function updateTimer() {
+    const remaining = Math.max(0, endTime - Date.now());
+    const secs = Math.ceil(remaining / 1000);
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    timerEl.textContent = m + ":" + (s < 10 ? "0" + s : s);
+    timerEl.classList.toggle("warn", remaining <= 10000);
+    progressBar.style.width = ((remaining / (TIME_LIMIT * 1000)) * 100) + "%";
+    if (remaining <= 0) {
+      finished = true;
+      clearInterval(timerInterval);
+      showResults();
+    }
+  }
+
+  function showResults() {
+    clearInterval(timerInterval);
+    questionScreen.style.display = "none";
+    resultScreen.style.display = "block";
+
+    const total = results.length;
+    const correctCount = results.filter(function (r) { return r.correct; }).length;
+    const pct = total ? Math.round((correctCount / total) * 100) : 0;
+    const totalTime = results.reduce(function (s, r) { return s + r.time; }, 0);
+    const avg = total ? totalTime / total : 0;
+    const score = correctCount - (total - correctCount) * PENALTY;
+
+    document.getElementById("statCorrect").textContent = pct + "%";
+    document.getElementById("statAvg").textContent = avg.toFixed(2) + "s";
+    document.getElementById("statAnswered").textContent = correctCount + " / " + total;
+    document.getElementById("statScore").textContent = (Math.round(score * 100) / 100).toString();
+
+    const tbody = document.querySelector("#detailTable tbody");
+    tbody.innerHTML = "";
+    results.forEach(function (r, i) {
+      const tr = document.createElement("tr");
+      const tdN = document.createElement("td");
+      tdN.textContent = i + 1;
+      const tdT = document.createElement("td");
+      tdT.textContent = r.time.toFixed(2);
+      const tdR = document.createElement("td");
+      tdR.textContent = r.correct ? "Correct" : "Wrong";
+      tdR.className = r.correct ? "ok" : "bad";
+      tr.appendChild(tdN); tr.appendChild(tdT); tr.appendChild(tdR);
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById("startBtn").addEventListener("click", function () {
+    results.length = 0;
+    answered = 0;
+    finished = false;
+    instructionScreen.style.display = "none";
+    questionScreen.style.display = "block";
+    timerEl.classList.remove("warn");
+    timerEl.textContent = "4:00";
+    progressBar.style.width = "100%";
+    endTime = Date.now() + TIME_LIMIT * 1000;
+    timerInterval = setInterval(updateTimer, 200);
+    renderQuestion();
+  });
+})();
+</script>
+</body>
+</html>
